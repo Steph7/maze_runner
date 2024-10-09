@@ -6,6 +6,7 @@
 #include <chrono>
 #include <string>
 #include <sstream>
+#include <atomic>
 
 
 // Representação do labirinto
@@ -22,6 +23,7 @@ Maze maze;
 int num_rows;
 int num_cols;
 std::stack<Position> valid_positions;
+std::atomic<bool> exit_found = false;
 
 // Função para imprimir o labirinto
 void print_maze() {
@@ -153,7 +155,7 @@ bool is_valid_position(int row, int col) {
 }
 
 // Função principal para navegar pelo labirinto
-bool walk(Position pos) {
+void walk(Position pos) {
     // TODO: Implemente a lógica de navegação aqui
     // 1. Marque a posição atual como visitada (maze[pos.row][pos.col] = '.')
     // 2. Chame print_maze() para mostrar o estado atual do labirinto
@@ -173,14 +175,12 @@ bool walk(Position pos) {
 
     // Conferir se posição é a saída
     if(maze[pos.row][pos.col] == 's'){
-        return true; // Encontrou saída!!!
+        exit_found = true;
+        return; // Encontrou saída!!!
     }
     else{
         maze[pos.row][pos.col] = '.';
-        print_maze();
-        
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        
+
         Position novaPosicao;
         // Cima
         novaPosicao.row = pos.row + 1;
@@ -207,18 +207,18 @@ bool walk(Position pos) {
             valid_positions.push(novaPosicao);
         }
 
-        while(!valid_positions.empty()){
-            Position posicaoAtual;
-            posicaoAtual = valid_positions.top();
-            valid_positions.pop();
-            if(walk(posicaoAtual) == true){
-                return true;
-            }
-            else{
-                return false;
+        while(!exit_found){
+            print_maze();
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            while(!valid_positions.empty()){
+                Position posicaoAtual;
+                posicaoAtual = valid_positions.top();
+                valid_positions.pop();
+                std::thread helper1(walk, posicaoAtual);
+                helper1.detach();
             }
         }
-        return false;
+        return;
     }
 }
 
@@ -234,7 +234,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    bool exit_found = walk(initial_pos);
+    std::thread t(walk, initial_pos);
+    t.join();
 
     if (exit_found) {
         std::cout << "Saída encontrada!" << std::endl;
