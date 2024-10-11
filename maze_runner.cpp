@@ -172,6 +172,7 @@ void walk(Position pos) {
     //    c. Se walk retornar true, propague o retorno (retorne true)
     // 7. Se todas as posições foram exploradas sem encontrar a saída, retorne false
 
+    std::stack<Position> posicoes_validas;
 
     // Conferir se posição é a saída
     if(maze[pos.row][pos.col] == 's'){
@@ -186,34 +187,37 @@ void walk(Position pos) {
         novaPosicao.row = pos.row + 1;
         novaPosicao.col = pos.col;
         if(is_valid_position(novaPosicao.row, novaPosicao.col) == true){
-            valid_positions.push(novaPosicao);
+            posicoes_validas.push(novaPosicao);
         } 
         // Baixo
         novaPosicao.row = pos.row - 1;
         novaPosicao.col = pos.col;
         if(is_valid_position(novaPosicao.row, novaPosicao.col) == true){
-            valid_positions.push(novaPosicao);
+            posicoes_validas.push(novaPosicao);
         }
         // Esquerda 
         novaPosicao.row = pos.row;
         novaPosicao.col = pos.col - 1;
         if(is_valid_position(novaPosicao.row, novaPosicao.col) == true){
-            valid_positions.push(novaPosicao);
+            posicoes_validas.push(novaPosicao);
         }
         // Direita
         novaPosicao.row = pos.row;
         novaPosicao.col = pos.col + 1;
         if(is_valid_position(novaPosicao.row, novaPosicao.col) == true){
-            valid_positions.push(novaPosicao);
+            posicoes_validas.push(novaPosicao);
         }
 
         while(!exit_found){
-            print_maze();
-            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             while(!valid_positions.empty()){
                 Position posicaoAtual;
                 posicaoAtual = valid_positions.top();
                 valid_positions.pop();
+            }
+            while(!posicoes_validas.empty()){
+                Position posicaoAtual;
+                posicaoAtual = posicoes_validas.top();
+                posicoes_validas.pop();
                 std::thread helper1(walk, posicaoAtual);
                 helper1.detach();
             }
@@ -235,14 +239,19 @@ int main(int argc, char* argv[]) {
     }
 
     std::thread t(walk, initial_pos);
-    t.join();
+    t.detach();
+
+    while (!exit_found) {
+        print_maze();
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        system("clear");
+    }
 
     if (exit_found) {
         std::cout << "Saída encontrada!" << std::endl;
     } else {
         std::cout << "Não foi possível encontrar a saída." << std::endl;
     }
-
     return 0;
 }
 
