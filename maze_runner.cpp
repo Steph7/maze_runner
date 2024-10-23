@@ -145,6 +145,9 @@ bool is_valid_position(int row, int col) {
         else if(maze[row][col] == 's'){
             return true;
         }
+        else if(maze[row][col] == 'e'){
+            return true;
+        }
         else {
             return false;
         }
@@ -182,44 +185,60 @@ void walk(Position pos) {
     else{
         maze[pos.row][pos.col] = '.';
 
-        Position novaPosicao;
+        std::vector<Position> vizinhos;
+        int contador = 0;
+
         // Cima
-        novaPosicao.row = pos.row + 1;
-        novaPosicao.col = pos.col;
-        if(is_valid_position(novaPosicao.row, novaPosicao.col) == true){
-            posicoes_validas.push(novaPosicao);
-        } 
+        Position p1, p2, p3, p4;
+        p1.row = pos.row + 1;
+        p1.col = pos.col;
+        vizinhos.push_back(p1);
+
         // Baixo
-        novaPosicao.row = pos.row - 1;
-        novaPosicao.col = pos.col;
-        if(is_valid_position(novaPosicao.row, novaPosicao.col) == true){
-            posicoes_validas.push(novaPosicao);
-        }
+        p2.row = pos.row - 1;
+        p2.col = pos.col;
+        vizinhos.push_back(p2);
+
         // Esquerda 
-        novaPosicao.row = pos.row;
-        novaPosicao.col = pos.col - 1;
-        if(is_valid_position(novaPosicao.row, novaPosicao.col) == true){
-            posicoes_validas.push(novaPosicao);
-        }
+        p3.row = pos.row;
+        p3.col = pos.col - 1;
+        vizinhos.push_back(p3);
+
         // Direita
-        novaPosicao.row = pos.row;
-        novaPosicao.col = pos.col + 1;
-        if(is_valid_position(novaPosicao.row, novaPosicao.col) == true){
-            posicoes_validas.push(novaPosicao);
+        p4.row = pos.row;
+        p4.col = pos.col + 1;
+        vizinhos.push_back(p4);
+
+        for(int i; i < 4; i++){
+            if(is_valid_position(vizinhos[i].row, vizinhos[i].col) == true){
+                posicoes_validas.push(vizinhos[i]);
+                contador++;
+            }
+        }
+
+        // Encerrar Threads que não têm mais vizinhos que são caminhos
+        if(contador == 0){
+            vizinhos.clear();
+            return;
+        }
+        else{
+            vizinhos.clear();
         }
 
         while(!exit_found){
-            while(!valid_positions.empty()){
-                Position posicaoAtual;
-                posicaoAtual = valid_positions.top();
-                valid_positions.pop();
-            }
             while(!posicoes_validas.empty()){
                 Position posicaoAtual;
+                maze[posicaoAtual.row][posicaoAtual.col] = 'o';
                 posicaoAtual = posicoes_validas.top();
                 posicoes_validas.pop();
                 std::thread helper1(walk, posicaoAtual);
                 helper1.detach();
+            }
+            while(!valid_positions.empty()){
+                Position posicaoAtual;
+                maze[posicaoAtual.row][posicaoAtual.col] = '.';
+                posicaoAtual = valid_positions.top();
+                valid_positions.pop();
             }
         }
         return;
